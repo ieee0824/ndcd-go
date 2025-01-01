@@ -1,0 +1,12 @@
+# ndcd go
+画像をドット画風に変換します
+
+## アルゴリズム
+[こちら](https://www.jstage.jst.go.jp/article/itej/74/3/74_597/_pdf)の論文を参考にしています
+
+
+## install command
+
+```
+go install github.com/ieee0824/ndcd-go/ndcd
+```
