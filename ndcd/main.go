@@ -12,6 +12,8 @@ import (
 	"github.com/ieee0824/ndcd-go"
 )
 
+const maxHeight = 256
+
 func main() {
 	log.SetFlags(log.Lshortfile)
 	imageHeight := flag.Int("oh", 64, "output image height")
@@ -22,8 +24,8 @@ func main() {
 	if *inputFileName == "" || *outputFileName == "" {
 		log.Fatal("input file name and output file name are required")
 	}
-	if *imageHeight > 64 {
-		log.Fatal("image height must be less than or equal to 64")
+	if *imageHeight > maxHeight {
+		log.Fatalf("image height must be less than or equal to %d", maxHeight)
 	}
 
 	originalImage, err := os.Open(*inputFileName)
