@@ -10,3 +10,7 @@
 ```
 go install github.com/ieee0824/ndcd-go/ndcd
 ```
+
+## sample
+<img width="64px" src=".github/before.jpg">
+<img width="64px" src=".github/after.jpg">
