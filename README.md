@@ -16,6 +16,30 @@ go install github.com/ieee0824/ndcd-go/ndcd
 ndcd -i .github/before.jpg -o .github/after.jpg -oh 64 -bt box -bs 10 -c 1 -g 0.8 -s -oe 512
 ```
 
+### options
+```
+  -b float
+        brightness
+  -bs float
+        blur size
+  -bt string
+        gaussian or box (default "gaussian")
+  -c float
+        contrast
+  -cq int
+        color quantization
+  -g float
+        gamma
+  -i string
+        input file name
+  -o string
+        output file name
+  -oe int
+        output expand size
+  -oh int
+        output image height (default 64)
+```
+
 ## sample
 
 <table border="0">
