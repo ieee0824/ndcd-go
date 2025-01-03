@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"image"
 	"image/jpeg"
 	"image/png"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/ieee0824/ndcd-go"
+	"github.com/nfnt/resize"
 )
 
 const maxHeight = 256
@@ -24,6 +26,9 @@ func main() {
 	contrast := flag.Float64("c", 0.0, "contrast")
 	gamma := flag.Float64("g", 0.0, "gamma")
 	sharpen := flag.Bool("s", false, "sharpen")
+
+	// 出力の拡大
+	outputExpandSize := flag.Int("oe", 0, "output expand size")
 	flag.Parse()
 
 	if *inputFileName == "" || *outputFileName == "" {
@@ -51,6 +56,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var outputImage image.Image
+	if *outputExpandSize > 0 {
+		outputImage = resize.Resize(uint(*outputExpandSize), 0, converter, resize.NearestNeighbor)
+	} else {
+		outputImage = converter
+	}
+
 	ex := filepath.Ext(*outputFileName)
 
 	writeImage, err := os.Create(*outputFileName)
@@ -61,11 +73,11 @@ func main() {
 
 	switch ex {
 	case ".png", ".PNG":
-		if err := png.Encode(writeImage, converter); err != nil {
+		if err := png.Encode(writeImage, outputImage); err != nil {
 			log.Fatal(err)
 		}
 	case ".jpg", ".jpeg", ".JPG", ".JPEG":
-		if err := jpeg.Encode(writeImage, converter, &jpeg.Options{
+		if err := jpeg.Encode(writeImage, outputImage, &jpeg.Options{
 			Quality: 100,
 		}); err != nil {
 			log.Fatal(err)
