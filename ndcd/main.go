@@ -19,6 +19,10 @@ func main() {
 	imageHeight := flag.Int("oh", 64, "output image height")
 	inputFileName := flag.String("i", "", "input file name")
 	outputFileName := flag.String("o", "", "output file name")
+	blurSize := flag.Float64("bs", 0.0, "blur size")
+	contrast := flag.Float64("c", 0.0, "contrast")
+	gamma := flag.Float64("g", 0.0, "gamma")
+	sharpen := flag.Bool("s", false, "sharpen")
 	flag.Parse()
 
 	if *inputFileName == "" || *outputFileName == "" {
@@ -36,6 +40,10 @@ func main() {
 
 	converter, err := ndcd.New(originalImage, func(opt *ndcd.NdcdOption) {
 		opt.ImageHeight = *imageHeight
+		opt.BlurSize = *blurSize
+		opt.Contrast = *contrast
+		opt.Ganmma = *gamma
+		opt.Sharpen = *sharpen
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -55,7 +63,9 @@ func main() {
 			log.Fatal(err)
 		}
 	case ".jpg", ".jpeg", ".JPG", ".JPEG":
-		if err := jpeg.Encode(writeImage, converter, nil); err != nil {
+		if err := jpeg.Encode(writeImage, converter, &jpeg.Options{
+			Quality: 100,
+		}); err != nil {
 			log.Fatal(err)
 		}
 	default:

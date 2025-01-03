@@ -13,7 +13,7 @@ go install github.com/ieee0824/ndcd-go/ndcd
 
 ## command
 ```
-go run ndcd/main.go -i .github/before.jpg -o .github/after.jpg -oh 32
+go run ndcd/main.go -i .github/before.jpg -o .github/after.jpg -oh 64 -bs 23 -c 2 
 ```
 
 ## sample

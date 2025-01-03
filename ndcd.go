@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"math"
-	"os"
 
-	"github.com/ericpauley/go-quantize/quantize"
+	"github.com/anthonynsimon/bild/adjust"
+	"github.com/anthonynsimon/bild/blur"
+	"github.com/anthonynsimon/bild/effect"
 	"github.com/nfnt/resize"
 	"github.com/samber/lo"
 )
@@ -20,17 +20,27 @@ const maxHeight = 256
 
 type NdcdOption struct {
 	ImageHeight int
+	BlurSize    float64
+	Contrast    float64
+	Ganmma      float64
+	Sharpen     bool
 }
 
 func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
-	img, _, err := image.Decode(r)
+	img, format, err := image.Decode(r)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode image: %w", err)
+		// return nil, fmt.Errorf("failed to decode image: %w", err)
+		return nil, fmt.Errorf("failed to decode image: %w, format: %s", err, format)
 	}
 
-	resizedImage := resize.Resize(0, 512, img, resize.NearestNeighbor)
+	var baseImage image.Image
+	if img.Bounds().Max.Y-img.Bounds().Min.Y > 1080 {
+		baseImage = resize.Resize(0, 1080, img, resize.NearestNeighbor)
+	} else {
+		baseImage = img
+	}
 
-	imageHeight := resizedImage.Bounds().Max.Y - resizedImage.Bounds().Min.Y
+	imageHeight := baseImage.Bounds().Max.Y - baseImage.Bounds().Min.Y
 	defaultOpt := &NdcdOption{
 		ImageHeight: maxHeight,
 	}
@@ -44,25 +54,20 @@ func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
 		defaultPixSize = imageHeight / defaultOpt.ImageHeight
 	}
 
-	tmpFile, err := os.CreateTemp("", "ndcd.gif")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer tmpFile.Close()
-	defer os.Remove(tmpFile.Name())
-
-	if err := gif.Encode(tmpFile, resizedImage, &gif.Options{
-		NumColors: 32,
-		Quantizer: quantize.MedianCutQuantizer{},
-	}); err != nil {
-		return nil, fmt.Errorf("failed to encode gif: %w", err)
+	if defaultOpt.Contrast != 0 {
+		baseImage = adjust.Contrast(baseImage, defaultOpt.Contrast)
 	}
 
-	tmpFile.Seek(0, 0)
+	if defaultOpt.BlurSize != 0 {
+		baseImage = blur.Gaussian(baseImage, defaultOpt.BlurSize)
+	}
 
-	baseImage, _, err := image.Decode(tmpFile)
-	if err != nil {
-		panic(err)
+	if defaultOpt.Ganmma != 0 {
+		baseImage = adjust.Gamma(baseImage, defaultOpt.Ganmma)
+	}
+
+	if defaultOpt.Sharpen {
+		baseImage = effect.Sharpen(baseImage)
 	}
 
 	return &Ndcd{
@@ -105,14 +110,39 @@ func colorAvgTwoClor(c1, c2 color.Color) color.Color {
 	}
 }
 
-func colorAvg(colors []color.Color) color.Color {
-	return lo.Reduce(colors, func(agg, item color.Color, _ int) color.Color {
-		if agg == nil {
-			return item
-		}
+type addedColor struct {
+	r uint64
+	g uint64
+	b uint64
+	a uint64
+}
 
-		return colorAvgTwoClor(agg, item)
+func addColor(c color.Color, acc *addedColor) *addedColor {
+	if acc == nil {
+		r, g, b, a := c.RGBA()
+		return &addedColor{r: uint64(r), g: uint64(g), b: uint64(b), a: uint64(a)}
+	}
+
+	r, g, b, a := c.RGBA()
+	return &addedColor{
+		r: acc.r + uint64(r),
+		g: acc.g + uint64(g),
+		b: acc.b + uint64(b),
+		a: acc.a + uint64(a),
+	}
+}
+
+func colorAvg(colors []color.Color) color.Color {
+	added := lo.Reduce(colors, func(agg *addedColor, item color.Color, _ int) *addedColor {
+		return addColor(item, agg)
 	}, nil)
+
+	return color.RGBA64{
+		uint16(added.r / uint64(len(colors))),
+		uint16(added.g / uint64(len(colors))),
+		uint16(added.b / uint64(len(colors))),
+		uint16(added.a / uint64(len(colors))),
+	}
 }
 
 func (impl *Ndcd) At(x, y int) color.Color {
@@ -160,8 +190,6 @@ func (impl *Ndcd) ColorModel() color.Model {
 
 func (impl *Ndcd) Bounds() image.Rectangle {
 	orgBounds := impl.baseImg.Bounds()
-
-	_ = orgBounds
 
 	minX := orgBounds.Min.X
 	minY := orgBounds.Min.Y
