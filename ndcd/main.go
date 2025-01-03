@@ -20,6 +20,7 @@ func main() {
 	inputFileName := flag.String("i", "", "input file name")
 	outputFileName := flag.String("o", "", "output file name")
 	blurSize := flag.Float64("bs", 0.0, "blur size")
+	blurType := flag.String("bt", "gaussian", "gaussian or box")
 	contrast := flag.Float64("c", 0.0, "contrast")
 	gamma := flag.Float64("g", 0.0, "gamma")
 	sharpen := flag.Bool("s", false, "sharpen")
@@ -41,6 +42,7 @@ func main() {
 	converter, err := ndcd.New(originalImage, func(opt *ndcd.NdcdOption) {
 		opt.ImageHeight = *imageHeight
 		opt.BlurSize = *blurSize
+		opt.BlurType = *blurType
 		opt.Contrast = *contrast
 		opt.Ganmma = *gamma
 		opt.Sharpen = *sharpen

@@ -21,6 +21,7 @@ const maxHeight = 256
 type NdcdOption struct {
 	ImageHeight int
 	BlurSize    float64
+	BlurType    string
 	Contrast    float64
 	Ganmma      float64
 	Sharpen     bool
@@ -59,7 +60,12 @@ func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
 	}
 
 	if defaultOpt.BlurSize != 0 {
-		baseImage = blur.Gaussian(baseImage, defaultOpt.BlurSize)
+		switch defaultOpt.BlurType {
+		case "box":
+			baseImage = blur.Box(baseImage, defaultOpt.BlurSize)
+		default:
+			baseImage = blur.Gaussian(baseImage, defaultOpt.BlurSize)
+		}
 	}
 
 	if defaultOpt.Ganmma != 0 {
