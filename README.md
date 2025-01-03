@@ -17,5 +17,14 @@ go run ndcd/main.go -i .github/before.jpg -o .github/after.jpg -oh 64 -bt box -b
 ```
 
 ## sample
-<img height="512px" src=".github/before.jpg">
-<img height="512px" src=".github/after.jpg">
+
+<table border="0">
+<tr>
+<td><img height="256px" src=".github/before.jpg">
+<td><img height="256px" src=".github/after.jpg">
+</tr>
+</table>
+
+
+
+
