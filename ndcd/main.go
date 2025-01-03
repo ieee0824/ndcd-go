@@ -26,6 +26,7 @@ func main() {
 	contrast := flag.Float64("c", 0.0, "contrast")
 	gamma := flag.Float64("g", 0.0, "gamma")
 	sharpen := flag.Bool("s", false, "sharpen")
+	colorQuantization := flag.Int("cq", 0, "color quantization")
 
 	// 出力の拡大
 	outputExpandSize := flag.Int("oe", 0, "output expand size")
@@ -51,6 +52,7 @@ func main() {
 		opt.Contrast = *contrast
 		opt.Ganmma = *gamma
 		opt.Sharpen = *sharpen
+		opt.ColorQuantization = *colorQuantization
 	})
 	if err != nil {
 		log.Fatal(err)

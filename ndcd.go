@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"math"
+	"os"
 
 	"github.com/anthonynsimon/bild/adjust"
 	"github.com/anthonynsimon/bild/blur"
 	"github.com/anthonynsimon/bild/effect"
+	"github.com/ericpauley/go-quantize/quantize"
 	"github.com/nfnt/resize"
 	"github.com/samber/lo"
 )
@@ -19,12 +22,13 @@ import (
 const maxHeight = 256
 
 type NdcdOption struct {
-	ImageHeight int
-	BlurSize    float64
-	BlurType    string
-	Contrast    float64
-	Ganmma      float64
-	Sharpen     bool
+	ImageHeight       int
+	BlurSize          float64
+	BlurType          string
+	Contrast          float64
+	Ganmma            float64
+	Sharpen           bool
+	ColorQuantization int
 }
 
 func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
@@ -74,6 +78,28 @@ func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
 
 	if defaultOpt.Sharpen {
 		baseImage = effect.Sharpen(baseImage)
+	}
+
+	if 0 < defaultOpt.ColorQuantization || defaultOpt.ColorQuantization <= 256 {
+		tmpFile, err := os.CreateTemp("", "ndcd")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create temp file: %w", err)
+		}
+
+		if err := gif.Encode(tmpFile, baseImage, &gif.Options{
+			NumColors: defaultOpt.ColorQuantization,
+			Quantizer: quantize.MedianCutQuantizer{},
+		}); err != nil {
+			return nil, fmt.Errorf("failed to quantize image: %w", err)
+		}
+
+		tmpFile.Seek(0, 0)
+
+		quantizeImage, err := gif.Decode(tmpFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode quantized image: %w", err)
+		}
+		baseImage = quantizeImage
 	}
 
 	return &Ndcd{
