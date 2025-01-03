@@ -29,6 +29,7 @@ type NdcdOption struct {
 	Ganmma            float64
 	Sharpen           bool
 	ColorQuantization int
+	Brightness        float64
 }
 
 func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
@@ -80,6 +81,10 @@ func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
 		baseImage = effect.Sharpen(baseImage)
 	}
 
+	if defaultOpt.Brightness != 0 {
+		baseImage = adjust.Brightness(baseImage, defaultOpt.Brightness)
+	}
+
 	if 0 < defaultOpt.ColorQuantization || defaultOpt.ColorQuantization <= 256 {
 		tmpFile, err := os.CreateTemp("", "ndcd")
 		if err != nil {
@@ -99,6 +104,7 @@ func New(r io.Reader, optFunc ...func(opt *NdcdOption)) (*Ndcd, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode quantized image: %w", err)
 		}
+
 		baseImage = quantizeImage
 	}
 
